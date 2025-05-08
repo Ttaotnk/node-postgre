@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { Pool } from 'pg';
 import bodyParser from 'body-parser';
@@ -6,19 +7,19 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
-// PostgreSQL Connection (ใช้วิธีที่ 1 หรือ 2 ข้างต้น)
+// PostgreSQL Connection using Environment Variables
 const pool = new Pool({
-  user: 'taonakha',
-  host: 'dpg-d0de0iadbo4c738et160-a.oregon-postgres.render.com',
-  database: 'testpostgre_db',
-  password: 'MGqbs8Q4g6GOH69gTQ9qKaSqhdc32L7B',
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT || 5432,
   ssl: {
     rejectUnauthorized: false
   }
@@ -68,7 +69,15 @@ app.post('/register', async (req, res) => {
       [name, email, hashedPassword]
     );
     
-    res.json({ success: true, message: 'User registered successfully', user: newUser.rows[0] });
+    res.json({ 
+      success: true, 
+      message: 'User registered successfully', 
+      user: {
+        id: newUser.rows[0].id,
+        name: newUser.rows[0].name,
+        email: newUser.rows[0].email
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -95,7 +104,7 @@ app.post('/login', async (req, res) => {
     
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      'your_jwt_secret',
+      process.env.JWT_SECRET || 'your_jwt_secret_fallback',
       { expiresIn: '1h' }
     );
     
